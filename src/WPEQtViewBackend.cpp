@@ -134,6 +134,11 @@ WPEQtViewBackend::WPEQtViewBackend(const QSizeF& size, EGLDisplay display, EGLCo
 
 WPEQtViewBackend::~WPEQtViewBackend()
 {
+    if (m_lockedImage)
+        wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImage);
+    if (m_lockedImageOld)
+        wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImageOld);
+
     wpe_view_backend_exportable_fdo_destroy(m_exportable);
     eglDestroyContext(m_eglDisplay, m_eglContext);
 }
@@ -149,6 +154,9 @@ void WPEQtViewBackend::resize(const QSizeF& newSize)
 
 GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
 {
+    if (!m_lockedImage && m_lockedImageOld)
+        std::swap(m_lockedImage, m_lockedImageOld);
+
     if (!m_lockedImage || !hasValidSurface())
         return 0;
 
@@ -203,7 +211,9 @@ GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
     glFunctions->glDisableVertexAttribArray(1);
 
     wpe_view_backend_exportable_fdo_dispatch_frame_complete(m_exportable);
-    wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImage);
+    if (m_lockedImageOld)
+        wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImageOld);
+    m_lockedImageOld = m_lockedImage;
     m_lockedImage = nullptr;
 
     context->makeCurrent(oldSurface);

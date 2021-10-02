@@ -68,6 +68,7 @@ private:
     EGLContext m_eglContext { nullptr };
     struct wpe_view_backend_exportable_fdo* m_exportable { nullptr };
     struct wpe_fdo_egl_exported_image* m_lockedImage { nullptr };
+    struct wpe_fdo_egl_exported_image* m_lockedImageOld { nullptr };
 
     QPointer<WPEQtView> m_view;
     QOffscreenSurface m_surface;
