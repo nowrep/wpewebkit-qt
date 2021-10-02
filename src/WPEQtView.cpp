@@ -63,6 +63,7 @@ WPEQtView::~WPEQtView()
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(notifyLoadChangedCallback), this);
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(notifyLoadFailedCallback), this);
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(notifyLoadProgressCallback), this);
+    g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(createRequested), this);
 }
 
 void WPEQtView::geometryChanged(const QRectF& newGeometry, const QRectF&)
@@ -112,6 +113,7 @@ void WPEQtView::createWebView()
     g_signal_connect_swapped(m_webView.get(), "notify::estimated-load-progress", G_CALLBACK(notifyLoadProgressCallback), this);
     g_signal_connect(m_webView.get(), "load-changed", G_CALLBACK(notifyLoadChangedCallback), this);
     g_signal_connect(m_webView.get(), "load-failed", G_CALLBACK(notifyLoadFailedCallback), this);
+    g_signal_connect(m_webView.get(), "create", G_CALLBACK(createRequested), this);
 
     if (!m_url.isEmpty())
         webkit_web_view_load_uri(m_webView.get(), m_url.toString().toUtf8().constData());
@@ -174,6 +176,12 @@ void WPEQtView::notifyLoadFailedCallback(WebKitWebView*, WebKitLoadEvent, const 
     WPEQtViewLoadRequestPrivate loadRequestPrivate(QUrl(QString(failingURI)), loadStatus, error->message);
     std::unique_ptr<WPEQtViewLoadRequest> loadRequest = std::make_unique<WPEQtViewLoadRequest>(loadRequestPrivate);
     Q_EMIT view->loadingChanged(loadRequest.get());
+}
+
+void *WPEQtView::createRequested(WebKitWebView* web_view, WebKitNavigationAction* action, WPEQtView*)
+{
+    webkit_web_view_load_request(web_view, webkit_navigation_action_get_request(action));
+    return nullptr;
 }
 
 QSGNode* WPEQtView::updatePaintNode(QSGNode* node, UpdatePaintNodeData*)

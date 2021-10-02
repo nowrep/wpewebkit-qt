@@ -110,6 +110,7 @@ private:
     static void notifyLoadProgressCallback(WPEQtView*);
     static void notifyLoadChangedCallback(WebKitWebView*, WebKitLoadEvent, WPEQtView*);
     static void notifyLoadFailedCallback(WebKitWebView*, WebKitLoadEvent, const gchar* failingURI, GError*, WPEQtView*);
+    static void *createRequested(WebKitWebView*, WebKitNavigationAction*, WPEQtView*);
 
     GRefPtr<WebKitWebView> m_webView;
     QUrl m_url;
