@@ -17,5 +17,6 @@ pkg_check_modules(WPE_FDO wpebackend-fdo-1.0 IMPORTED_TARGET)
 pkg_check_modules(WPE_WEBKIT wpe-webkit-1.0 IMPORTED_TARGET)
 
 add_subdirectory(src)
+add_subdirectory(tests)
 
 feature_summary(WHAT ALL FATAL_ON_MISSING_REQUIRED_PACKAGES)
