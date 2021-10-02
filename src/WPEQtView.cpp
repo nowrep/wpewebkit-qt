@@ -21,12 +21,14 @@
 #include "config.h"
 #include "WPEQtView.h"
 
+#include "WPEQtViewBackend.h"
 #include "WPEQtViewLoadRequest.h"
 #include "WPEQtViewLoadRequestPrivate.h"
 #include <QGuiApplication>
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
 #include <QScreen>
+#include <QtGlobal>
 #include <QtPlatformHeaders/QEGLNativeContext>
 #include <qpa/qplatformnativeinterface.h>
 #include <wtf/glib/GUniquePtr.h>
@@ -77,7 +79,11 @@ void WPEQtView::configureWindow()
         return;
 
     win->setSurfaceType(QWindow::OpenGLSurface);
-    connect(win, &QQuickWindow::sceneGraphInitialized, this, &WPEQtView::createWebView);
+
+    if (win->isSceneGraphInitialized())
+        createWebView();
+    else
+        connect(win, &QQuickWindow::sceneGraphInitialized, this, &WPEQtView::createWebView);
 }
 
 void WPEQtView::createWebView()
@@ -183,7 +189,12 @@ QSGNode* WPEQtView::updatePaintNode(QSGNode* node, UpdatePaintNodeData*)
     if (!textureId)
         return node;
 
-    textureNode->setTexture(window()->createTextureFromId(textureId, m_size.toSize(), QQuickWindow::TextureHasAlphaChannel));
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+    auto texture = window()->createTextureFromNativeObject(QQuickWindow::NativeObjectTexture, &textureId, 0, m_size.toSize(), QQuickWindow::TextureHasAlphaChannel);
+#else
+    auto texture = window()->createTextureFromId(textureId, m_size.toSize(), QQuickWindow::TextureHasAlphaChannel);
+#endif
+    textureNode->setTexture(texture);
     textureNode->setRect(boundingRect());
     return textureNode;
 }

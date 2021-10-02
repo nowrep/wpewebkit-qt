@@ -24,6 +24,7 @@
 #include "WPEQtView.h"
 #include <QGuiApplication>
 #include <QOpenGLFunctions>
+#include <QtGlobal>
 
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC imageTargetTexture2DOES;
 
@@ -37,7 +38,7 @@ std::unique_ptr<WPEQtViewBackend> WPEQtViewBackend::create(const QSizeF& size, Q
 
     eglInitialize(eglDisplay, nullptr, nullptr);
 
-    if (!eglBindAPI(EGL_OPENGL_ES_API))
+    if (!eglBindAPI(EGL_OPENGL_ES_API) || !wpe_fdo_initialize_for_egl_display(eglDisplay))
         return nullptr;
 
     static const EGLint configAttributes[13] = {
@@ -74,11 +75,7 @@ WPEQtViewBackend::WPEQtViewBackend(const QSizeF& size, EGLDisplay display, EGLCo
     , m_view(view)
     , m_size(size)
 {
-#if defined(WPE_BACKEND_CHECK_VERSION) && WPE_BACKEND_CHECK_VERSION(0, 2, 0)
-    wpe_loader_init("libWPEBackend-fdo-0.1.so");
-#endif
-
-    wpe_fdo_initialize_for_egl_display(m_eglDisplay);
+    wpe_loader_init("libWPEBackend-fdo-1.0.so");
 
     imageTargetTexture2DOES = reinterpret_cast<PFNGLEGLIMAGETARGETTEXTURE2DOESPROC>(eglGetProcAddress("glEGLImageTargetTexture2DOES"));
 
@@ -117,20 +114,19 @@ WPEQtViewBackend::WPEQtViewBackend(const QSizeF& size, EGLDisplay display, EGLCo
     m_textureUniform = glFunctions->glGetUniformLocation(m_program, "u_texture");
 
     static struct wpe_view_backend_exportable_fdo_egl_client exportableClient = {
-        // export_buffer_resource
-        [](void* data, EGLImageKHR image)
+        // export_egl_image
+        nullptr,
+        [](void* data, struct wpe_fdo_egl_exported_image* image)
         {
             static_cast<WPEQtViewBackend*>(data)->displayImage(image);
         },
         // padding
-        nullptr, nullptr, nullptr, nullptr
+        nullptr, nullptr, nullptr
     };
 
     m_exportable = wpe_view_backend_exportable_fdo_egl_create(&exportableClient, this, m_size.width(), m_size.height());
 
-#if defined(WPE_BACKEND_CHECK_VERSION) && WPE_BACKEND_CHECK_VERSION(1, 1, 0)
     wpe_view_backend_add_activity_state(backend(), wpe_view_activity_state_visible | wpe_view_activity_state_focused | wpe_view_activity_state_in_window);
-#endif
 
     m_surface.setFormat(context->format());
     m_surface.create();
@@ -177,7 +173,7 @@ GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
 
     glFunctions->glActiveTexture(GL_TEXTURE0);
     glFunctions->glBindTexture(GL_TEXTURE_2D, m_textureId);
-    imageTargetTexture2DOES(GL_TEXTURE_2D, m_lockedImage);
+    imageTargetTexture2DOES(GL_TEXTURE_2D, wpe_fdo_egl_exported_image_get_egl_image(m_lockedImage));
     glFunctions->glUniform1i(m_textureUniform, 0);
 
     static const GLfloat vertices[4][2] = {
@@ -206,15 +202,15 @@ GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
     glFunctions->glDisableVertexAttribArray(1);
 
     wpe_view_backend_exportable_fdo_dispatch_frame_complete(m_exportable);
-    wpe_view_backend_exportable_fdo_egl_dispatch_release_image(m_exportable, m_lockedImage);
-    m_lockedImage = EGL_NO_IMAGE_KHR;
+    wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImage);
+    m_lockedImage = nullptr;
 
     return m_textureId;
 }
 
-void WPEQtViewBackend::displayImage(EGLImageKHR image)
+void WPEQtViewBackend::displayImage(struct wpe_fdo_egl_exported_image* image)
 {
-    RELEASE_ASSERT(m_lockedImage == EGL_NO_IMAGE_KHR);
+    RELEASE_ASSERT(!m_lockedImage);
     m_lockedImage = image;
     if (m_view)
         m_view->triggerUpdate();
@@ -302,17 +298,25 @@ void WPEQtViewBackend::dispatchMouseReleaseEvent(QMouseEvent* event)
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#define QWHEEL_POSITION position()
+#else
+#define QWHEEL_POSITION posF()
+#endif
+
 void WPEQtViewBackend::dispatchWheelEvent(QWheelEvent* event)
 {
     QPoint delta = event->angleDelta();
-    uint32_t axis = delta.y() == event->y();
     QPoint numDegrees = delta / 8;
-    QPoint numSteps = numDegrees / 15;
-    int32_t length = numSteps.y() ? numSteps.y() : numSteps.x();
-    struct wpe_input_axis_event wpeEvent = { wpe_input_axis_event_type_motion,
-        static_cast<uint32_t>(event->timestamp()),
-        event->x(), event->y(), axis, length, modifiers() };
-    wpe_view_backend_dispatch_axis_event(backend(), &wpeEvent);
+    struct wpe_input_axis_2d_event wpeEvent;
+    if (delta.y() == event->QWHEEL_POSITION.y())
+        wpeEvent.x_axis = numDegrees.x();
+    else
+        wpeEvent.y_axis = numDegrees.y();
+    wpeEvent.base.type = static_cast<wpe_input_axis_event_type>(wpe_input_axis_event_type_mask_2d | wpe_input_axis_event_type_motion_smooth);
+    wpeEvent.base.x = event->QWHEEL_POSITION.x();
+    wpeEvent.base.y = event->QWHEEL_POSITION.y();
+    wpe_view_backend_dispatch_axis_event(backend(), &wpeEvent.base);
 }
 
 void WPEQtViewBackend::dispatchKeyEvent(QKeyEvent* event, bool state)
