@@ -260,6 +260,16 @@ void WPEQtViewBackend::dispatchHoverMoveEvent(QHoverEvent* event)
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
 
+void WPEQtViewBackend::dispatchMouseMoveEvent(QMouseEvent* event)
+{
+    uint32_t state = !!m_mousePressedButton;
+    struct wpe_input_pointer_event wpeEvent = { wpe_input_pointer_event_type_motion,
+        static_cast<uint32_t>(event->timestamp()),
+        event->pos().x(), event->pos().y(),
+        m_mousePressedButton, state, modifiers() };
+    wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
+}
+
 void WPEQtViewBackend::dispatchMousePressEvent(QMouseEvent* event)
 {
     uint32_t button = 0;

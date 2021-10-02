@@ -454,6 +454,12 @@ void WPEQtView::runJavaScript(const QString& script, const QJSValue& callback)
     webkit_web_view_run_javascript(m_webView.get(), script.toUtf8().constData(), nullptr, jsAsyncReadyCallback, data.release());
 }
 
+void WPEQtView::mouseMoveEvent(QMouseEvent* event)
+{
+    if (m_backend)
+        m_backend->dispatchMouseMoveEvent(event);
+}
+
 void WPEQtView::mousePressEvent(QMouseEvent* event)
 {
     forceActiveFocus();

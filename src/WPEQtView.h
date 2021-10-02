@@ -90,6 +90,7 @@ protected:
     void hoverLeaveEvent(QHoverEvent*) override;
     void hoverMoveEvent(QHoverEvent*) override;
 
+    void mouseMoveEvent(QMouseEvent*) override;
     void mousePressEvent(QMouseEvent*) override;
     void mouseReleaseEvent(QMouseEvent*) override;
     void wheelEvent(QWheelEvent*) override;

@@ -50,6 +50,7 @@ public:
     void dispatchHoverLeaveEvent(QHoverEvent*);
     void dispatchHoverMoveEvent(QHoverEvent*);
 
+    void dispatchMouseMoveEvent(QMouseEvent*);
     void dispatchMousePressEvent(QMouseEvent*);
     void dispatchMouseReleaseEvent(QMouseEvent*);
     void dispatchWheelEvent(QWheelEvent*);
