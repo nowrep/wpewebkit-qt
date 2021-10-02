@@ -152,6 +152,7 @@ GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
     if (!m_lockedImage || !hasValidSurface())
         return 0;
 
+    QSurface *oldSurface = context->surface();
     context->makeCurrent(&m_surface);
 
     QOpenGLFunctions* glFunctions = context->functions();
@@ -205,6 +206,7 @@ GLuint WPEQtViewBackend::texture(QOpenGLContext* context)
     wpe_view_backend_exportable_fdo_egl_dispatch_release_exported_image(m_exportable, m_lockedImage);
     m_lockedImage = nullptr;
 
+    context->makeCurrent(oldSurface);
     return m_textureId;
 }
 
