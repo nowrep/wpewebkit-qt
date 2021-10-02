@@ -3,6 +3,7 @@ set(qtwpe_SOURCES
     WPEQmlExtensionPlugin.cpp
     WPEQtView.cpp
     WPEQtViewLoadRequest.cpp
+    WPEQtImContext.cpp
 )
 
 set(qtwpe_LIBRARIES

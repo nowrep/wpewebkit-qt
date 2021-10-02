@@ -341,11 +341,35 @@ void WPEQtViewBackend::dispatchWheelEvent(QWheelEvent* event)
     wpe_view_backend_dispatch_axis_event(backend(), &wpeEvent.base);
 }
 
+static uint32_t qt_key_to_xkb_sym(int key)
+{
+    // This will probably only be used for IME input.
+    // Most of the keys sets text string that can be
+    // forwarded with committed signal.
+    //
+    // Keys that needs to be sent as real key event
+    // are handled here.
+
+    switch (key) {
+    case Qt::Key_Backspace: return 0xff08;
+    default: return 0;
+    }
+}
+
 void WPEQtViewBackend::dispatchKeyEvent(QKeyEvent* event, bool state)
 {
+    // IME input
+    if (!event->nativeVirtualKey() && !event->nativeScanCode()) {
+        if (!event->text().isEmpty()) {
+            if (event->type() == QEvent::KeyPress)
+                g_signal_emit_by_name(m_view->m_imContext, "committed", qPrintable(event->text()));
+            return;
+        }
+    }
+
     uint32_t keysym = event->nativeVirtualKey();
     if (!keysym)
-        keysym = wpe_input_xkb_context_get_key_code(wpe_input_xkb_context_get_default(), event->key(), state);
+        keysym = qt_key_to_xkb_sym(event->key());
 
     uint32_t modifiers = 0;
     Qt::KeyboardModifiers qtModifiers = event->modifiers();

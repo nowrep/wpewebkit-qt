@@ -24,6 +24,7 @@
 #include "WPEQtViewBackend.h"
 #include "WPEQtViewLoadRequest.h"
 #include "WPEQtViewLoadRequestPrivate.h"
+#include "WPEQtImContext.h"
 #include <QGuiApplication>
 #include <QQuickWindow>
 #include <QSGSimpleTextureNode>
@@ -107,6 +108,9 @@ void WPEQtView::createWebView()
             delete static_cast<WPEQtViewBackend*>(data);
         }, backend.release()),
         "settings", settings.get(), nullptr)));
+
+    m_imContext = wpeqt_im_context_new(this);
+    webkit_web_view_set_input_method_context(m_webView.get(), m_imContext);
 
     g_signal_connect_swapped(m_webView.get(), "notify::uri", G_CALLBACK(notifyUrlChangedCallback), this);
     g_signal_connect_swapped(m_webView.get(), "notify::title", G_CALLBACK(notifyTitleChangedCallback), this);
@@ -521,4 +525,16 @@ void WPEQtView::touchEvent(QTouchEvent* event)
 {
     if (m_backend)
         m_backend->dispatchTouchEvent(event);
+}
+
+void WPEQtView::inputMethodEvent(QInputMethodEvent* event)
+{
+    wpeqt_im_context_event(WPEQT_IM_CONTEXT(m_imContext), event);
+}
+
+QVariant WPEQtView::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+    QVariant out;
+    wpeqt_im_context_query(WPEQT_IM_CONTEXT(m_imContext), query, &out);
+    return out;
 }

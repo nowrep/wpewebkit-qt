@@ -100,6 +100,9 @@ protected:
 
     void touchEvent(QTouchEvent*) override;
 
+    void inputMethodEvent(QInputMethodEvent*) override;
+    QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+
 private Q_SLOTS:
     void configureWindow();
     void createWebView();
@@ -119,4 +122,7 @@ private:
     QSizeF m_size;
     WPEQtViewBackend* m_backend { nullptr };
     bool m_errorOccured { false };
+    WebKitInputMethodContext *m_imContext = nullptr;
+
+    friend class WPEQtViewBackend;
 };
