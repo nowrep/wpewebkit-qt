@@ -42,6 +42,8 @@ public:
     WPEQtViewBackend(const QSizeF&, EGLDisplay, EGLContext, QPointer<QOpenGLContext>, QPointer<WPEQtView>);
     virtual ~WPEQtViewBackend();
 
+    void setScaleFactor(float factor);
+
     void resize(const QSizeF&);
     GLuint texture(QOpenGLContext*);
     bool hasValidSurface() const { return m_surface.isValid(); };
@@ -77,6 +79,7 @@ private:
     GLuint m_textureId { 0 };
     unsigned m_program { 0 };
     unsigned m_textureUniform { 0 };
+    float m_scale = 1.0;
 
     bool m_hovering { false };
     uint32_t m_mouseModifiers { 0 };

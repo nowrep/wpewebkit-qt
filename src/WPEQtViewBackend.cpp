@@ -143,6 +143,13 @@ WPEQtViewBackend::~WPEQtViewBackend()
     eglDestroyContext(m_eglDisplay, m_eglContext);
 }
 
+void WPEQtViewBackend::setScaleFactor(float factor)
+{
+    m_scale = factor;
+    auto backend = wpe_view_backend_exportable_fdo_get_view_backend(m_exportable);
+    wpe_view_backend_dispatch_set_device_scale_factor(backend, m_scale);
+}
+
 void WPEQtViewBackend::resize(const QSizeF& newSize)
 {
     if (!newSize.isValid())
@@ -255,7 +262,7 @@ void WPEQtViewBackend::dispatchHoverMoveEvent(QHoverEvent* event)
     uint32_t state = !!m_mousePressedButton;
     struct wpe_input_pointer_event wpeEvent = { wpe_input_pointer_event_type_motion,
         static_cast<uint32_t>(event->timestamp()),
-        event->pos().x(), event->pos().y(),
+        event->pos().x() * m_scale, event->pos().y() * m_scale,
         m_mousePressedButton, state, modifiers() };
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
@@ -265,7 +272,7 @@ void WPEQtViewBackend::dispatchMouseMoveEvent(QMouseEvent* event)
     uint32_t state = !!m_mousePressedButton;
     struct wpe_input_pointer_event wpeEvent = { wpe_input_pointer_event_type_motion,
         static_cast<uint32_t>(event->timestamp()),
-        event->pos().x(), event->pos().y(),
+        int(event->pos().x() * m_scale), int(event->pos().y() * m_scale),
         m_mousePressedButton, state, modifiers() };
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
@@ -291,7 +298,7 @@ void WPEQtViewBackend::dispatchMousePressEvent(QMouseEvent* event)
     m_mouseModifiers |= modifier;
     struct wpe_input_pointer_event wpeEvent = { wpe_input_pointer_event_type_button,
         static_cast<uint32_t>(event->timestamp()),
-        event->x(), event->y(), button, state, modifiers() };
+        event->x() * m_scale, event->y() * m_scale, button, state, modifiers() };
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
 
@@ -316,7 +323,7 @@ void WPEQtViewBackend::dispatchMouseReleaseEvent(QMouseEvent* event)
     m_mouseModifiers &= ~modifier;
     struct wpe_input_pointer_event wpeEvent = { wpe_input_pointer_event_type_button,
         static_cast<uint32_t>(event->timestamp()),
-        event->x(), event->y(), button, state, modifiers() };
+        event->x() * m_scale, event->y() * m_scale, button, state, modifiers() };
     wpe_view_backend_dispatch_pointer_event(backend(), &wpeEvent);
 }
 
