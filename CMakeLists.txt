@@ -6,8 +6,15 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
 
 include(FeatureSummary)
 
-set(QT_MIN_VERSION "5.15.0")
-find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Quick)
+option(USE_QT6 "Use Qt6" ON)
+
+if(USE_QT6)
+    set(QT_MIN_VERSION "6.2.0")
+    find_package(Qt6 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Quick)
+else()
+    set(QT_MIN_VERSION "5.15.0")
+    find_package(Qt5 ${QT_MIN_VERSION} REQUIRED COMPONENTS Core Gui Quick)
+endif()
 
 find_package(PkgConfig)
 pkg_check_modules(EGL egl IMPORTED_TARGET)

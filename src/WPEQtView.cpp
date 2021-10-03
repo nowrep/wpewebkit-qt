@@ -30,7 +30,6 @@
 #include <QSGSimpleTextureNode>
 #include <QScreen>
 #include <QtGlobal>
-#include <QtPlatformHeaders/QEGLNativeContext>
 #include <qpa/qplatformnativeinterface.h>
 #include <wtf/glib/GUniquePtr.h>
 
@@ -67,7 +66,11 @@ WPEQtView::~WPEQtView()
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(createRequested), this);
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+void WPEQtView::geometryChange(const QRectF& newGeometry, const QRectF&)
+#else
 void WPEQtView::geometryChanged(const QRectF& newGeometry, const QRectF&)
+#endif
 {
     m_size = newGeometry.size();
     if (m_backend)
@@ -88,13 +91,25 @@ void WPEQtView::configureWindow()
         connect(win, &QQuickWindow::sceneGraphInitialized, this, &WPEQtView::createWebView);
 }
 
+static QOpenGLContext *glContext(QQuickWindow *window)
+{
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    RELEASE_ASSERT_WITH_MESSAGE(window->rendererInterface()->graphicsApi() != QSGRendererInterface::OpenGL, "OpenGL renderer required");
+    if (window->rendererInterface()->graphicsApi() != QSGRendererInterface::OpenGL)
+        return nullptr;
+    return static_cast<QOpenGLContext*>(window->rendererInterface()->getResource(window, QSGRendererInterface::OpenGLContextResource));
+#else
+    return window()->openglContext();
+#endif
+}
+
 void WPEQtView::createWebView()
 {
     if (m_backend)
         return;
 
     auto display = static_cast<EGLDisplay>(QGuiApplication::platformNativeInterface()->nativeResourceForIntegration("egldisplay"));
-    auto* context = window()->openglContext();
+    auto* context = glContext(window());
     std::unique_ptr<WPEQtViewBackend> backend = WPEQtViewBackend::create(m_size, context, display, QPointer<WPEQtView>(this));
     RELEASE_ASSERT_WITH_MESSAGE(backend, "EGL initialization failed");
     if (!backend)
@@ -197,11 +212,13 @@ QSGNode* WPEQtView::updatePaintNode(QSGNode* node, UpdatePaintNodeData*)
     if (!textureNode)
         textureNode = new QSGSimpleTextureNode();
 
-    GLuint textureId = m_backend->texture(window()->openglContext());
+    GLuint textureId = m_backend->texture(glContext(window()));
     if (!textureId)
         return node;
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    QSGTexture *texture = QNativeInterface::QSGOpenGLTexture::fromNative(textureId, window(), m_size.toSize(), QQuickWindow::TextureHasAlphaChannel);
+#elif (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
     auto texture = window()->createTextureFromNativeObject(QQuickWindow::NativeObjectTexture, &textureId, 0, m_size.toSize(), QQuickWindow::TextureHasAlphaChannel);
 #else
     auto texture = window()->createTextureFromId(textureId, m_size.toSize(), QQuickWindow::TextureHasAlphaChannel);

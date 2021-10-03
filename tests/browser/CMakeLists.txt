@@ -7,4 +7,4 @@ qt_add_resources(browser_SRCS
 )
 
 add_executable(browser ${browser_SRCS})
-target_link_libraries(browser Qt5::Quick)
+target_link_libraries(browser Qt::Quick)

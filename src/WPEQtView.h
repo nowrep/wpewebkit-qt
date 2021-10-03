@@ -84,7 +84,11 @@ protected:
     bool errorOccured() const { return m_errorOccured; };
     void setErrorOccured(bool errorOccured) { m_errorOccured = errorOccured; };
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    void geometryChange(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+#else
     void geometryChanged(const QRectF& newGeometry, const QRectF& oldGeometry) override;
+#endif
 
     void hoverEnterEvent(QHoverEvent*) override;
     void hoverLeaveEvent(QHoverEvent*) override;

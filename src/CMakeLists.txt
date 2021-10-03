@@ -7,7 +7,7 @@ set(qtwpe_SOURCES
 )
 
 set(qtwpe_LIBRARIES
-    Qt5::Core Qt5::Gui Qt5::GuiPrivate Qt5::Quick
+    Qt::Core Qt::Gui Qt::GuiPrivate Qt::Quick
     PkgConfig::EGL
     PkgConfig::EPOXY
     PkgConfig::WPE
