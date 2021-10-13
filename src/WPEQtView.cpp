@@ -99,7 +99,7 @@ static QOpenGLContext *glContext(QQuickWindow *window)
         return nullptr;
     return static_cast<QOpenGLContext*>(window->rendererInterface()->getResource(window, QSGRendererInterface::OpenGLContextResource));
 #else
-    return window()->openglContext();
+    return window->openglContext();
 #endif
 }
 
