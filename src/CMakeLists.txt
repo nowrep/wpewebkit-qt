@@ -26,8 +26,9 @@ target_link_libraries(qtwpe ${qtwpe_LIBRARIES})
 
 target_include_directories(qtwpe SYSTEM PRIVATE compat)
 
-install(TARGETS qtwpe DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}/qml/org/wpewebkit/qtwpe/")
-install(FILES qmldir DESTINATION "${CMAKE_INSTALL_FULL_LIBDIR}/qml/org/wpewebkit/qtwpe/")
+set(INSTALL_QMLDIR lib/qt/qml CACHE STRING "QML plugin install dir")
+install(TARGETS qtwpe DESTINATION "${INSTALL_QMLDIR}/org/wpewebkit/qtwpe/")
+install(FILES qmldir DESTINATION "${INSTALL_QMLDIR}/org/wpewebkit/qtwpe/")
 
 file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/qml/org/wpewebkit/qtwpe)
 add_custom_command(TARGET qtwpe POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy
