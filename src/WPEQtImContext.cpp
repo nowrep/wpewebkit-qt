@@ -18,6 +18,7 @@
  */
 
 #include "WPEQtImContext.h"
+#include "WPEQtView.h"
 
 #include <QRect>
 #include <QInputMethod>
@@ -55,7 +56,7 @@ static void wpeqt_im_context_notify_focus_in(WebKitInputMethodContext *context)
     priv->enabled = true;
 
     qApp->inputMethod()->update(Qt::ImQueryInput | Qt::ImEnabled | Qt::ImHints);
-    if (!qApp->inputMethod()->isVisible())
+    if (!qApp->inputMethod()->isVisible() && priv->view->hasActiveFocus())
         qApp->inputMethod()->setVisible(true);
 }
 
@@ -66,7 +67,7 @@ static void wpeqt_im_context_notify_focus_out(WebKitInputMethodContext *context)
     priv->enabled = false;
 
     qApp->inputMethod()->update(Qt::ImQueryInput | Qt::ImEnabled | Qt::ImHints);
-    if (qApp->inputMethod()->isVisible())
+    if (qApp->inputMethod()->isVisible() && priv->view->hasActiveFocus())
         qApp->inputMethod()->setVisible(false);
 }
 
@@ -77,6 +78,8 @@ static void wpeqt_im_context_notify_cursor_area(WebKitInputMethodContext *contex
     *priv->cursorArea = QRect(x, y, width, height);
 
     qApp->inputMethod()->update(Qt::ImQueryInput | Qt::ImEnabled | Qt::ImHints);
+    if (!qApp->inputMethod()->isVisible() && priv->enabled && priv->view->hasActiveFocus())
+        qApp->inputMethod()->setVisible(true);
 }
 
 static void wpeqt_im_context_notify_surrounding(WebKitInputMethodContext *context, const char *text, guint length, guint cursor_index, guint selection_index)
@@ -88,6 +91,8 @@ static void wpeqt_im_context_notify_surrounding(WebKitInputMethodContext *contex
     priv->selectionIndex = selection_index;
 
     qApp->inputMethod()->update(Qt::ImQueryInput | Qt::ImEnabled | Qt::ImHints);
+    if (!qApp->inputMethod()->isVisible() && priv->enabled && priv->view->hasActiveFocus())
+        qApp->inputMethod()->setVisible(true);
 }
 
 static void wpeqt_im_context_reset(WebKitInputMethodContext *context)
