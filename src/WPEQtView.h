@@ -79,6 +79,7 @@ Q_SIGNALS:
     void titleChanged();
     void loadingChanged(WPEQtViewLoadRequest* loadRequest);
     void loadProgressChanged();
+    void webProcessCrashed();
 
 protected:
     bool errorOccured() const { return m_errorOccured; };
@@ -117,6 +118,7 @@ private:
     static void notifyLoadProgressCallback(WPEQtView*);
     static void notifyLoadChangedCallback(WebKitWebView*, WebKitLoadEvent, WPEQtView*);
     static void notifyLoadFailedCallback(WebKitWebView*, WebKitLoadEvent, const gchar* failingURI, GError*, WPEQtView*);
+    static void notifyWebProcessTerminatedCallback(WebKitWebView*, WebKitWebProcessTerminationReason, WPEQtView*);
     static void *createRequested(WebKitWebView*, WebKitNavigationAction*, WPEQtView*);
 
     GRefPtr<WebKitWebView> m_webView;
