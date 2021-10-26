@@ -75,7 +75,9 @@ static void wpeqt_im_context_notify_cursor_area(WebKitInputMethodContext *contex
 {
     WPEQtImContextPrivate *priv = PRIV(context);
 
-    *priv->cursorArea = QRect(x, y, width, height);
+    // XXX: There's no way to query scroll position (beside JS), and the x/y
+    //      here are in content coordinates instead of in viewport coordinates.
+    *priv->cursorArea = QRect(std::min(x, (int)priv->view->width()), std::min(y, (int)priv->view->height()), width, height);
 
     qApp->inputMethod()->update(Qt::ImQueryInput | Qt::ImEnabled | Qt::ImHints);
     if (!qApp->inputMethod()->isVisible() && priv->enabled && priv->view->hasActiveFocus())
