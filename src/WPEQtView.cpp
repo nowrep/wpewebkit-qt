@@ -65,6 +65,8 @@ WPEQtView::~WPEQtView()
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(notifyLoadProgressCallback), this);
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(notifyWebProcessTerminatedCallback), this);
     g_signal_handlers_disconnect_by_func(m_webView.get(), reinterpret_cast<gpointer>(createRequested), this);
+
+    webkit_web_view_terminate_web_process(m_webView.get());
 }
 
 #if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
