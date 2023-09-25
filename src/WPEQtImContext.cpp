@@ -134,19 +134,28 @@ static void wpeqt_im_context_content_type_changed(WPEQtImContext *context)
 
     priv->hints = Qt::ImhNone;
 
-    // if (purpose & WEBKIT_INPUT_PURPOSE_FREE_FORM)
-    if (purpose & WEBKIT_INPUT_PURPOSE_DIGITS)
-        priv->hints |= Qt::ImhDigitsOnly;
-    if (purpose & WEBKIT_INPUT_PURPOSE_NUMBER)
-        priv->hints |= Qt::ImhFormattedNumbersOnly;
-    if (purpose & WEBKIT_INPUT_PURPOSE_PHONE)
-        priv->hints |= Qt::ImhDialableCharactersOnly;
-    if (purpose & WEBKIT_INPUT_PURPOSE_URL)
-        priv->hints |= Qt::ImhUrlCharactersOnly;
-    if (purpose & WEBKIT_INPUT_PURPOSE_EMAIL)
-        priv->hints |= Qt::ImhEmailCharactersOnly;
-    if (purpose & WEBKIT_INPUT_PURPOSE_PASSWORD)
-        priv->hints |= (Qt::ImhHiddenText | Qt::ImhSensitiveData);
+    switch (purpose) {
+    case WEBKIT_INPUT_PURPOSE_DIGITS:
+        priv->hints = Qt::ImhDigitsOnly;
+        break;
+    case WEBKIT_INPUT_PURPOSE_NUMBER:
+        priv->hints = Qt::ImhFormattedNumbersOnly;
+        break;
+    case WEBKIT_INPUT_PURPOSE_PHONE:
+        priv->hints = Qt::ImhDialableCharactersOnly;
+        break;
+    case WEBKIT_INPUT_PURPOSE_URL:
+        priv->hints = Qt::ImhUrlCharactersOnly;
+        break;
+    case WEBKIT_INPUT_PURPOSE_EMAIL:
+        priv->hints = Qt::ImhEmailCharactersOnly;
+        break;
+    case WEBKIT_INPUT_PURPOSE_PASSWORD:
+        priv->hints = Qt::ImhHiddenText | Qt::ImhSensitiveData;
+        break;
+    default:
+        break;
+    }
 
     // if (hints & WEBKIT_INPUT_HINT_NONE)
     // if (hints & WEBKIT_INPUT_HINT_SPELLCHECK)
