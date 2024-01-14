@@ -24,6 +24,13 @@ pkg_check_modules(WPE_FDO wpebackend-fdo-1.0 IMPORTED_TARGET)
 pkg_check_modules(WPE_WEBKIT wpe-webkit-1.0 IMPORTED_TARGET)
 if(NOT WPE_WEBKIT_FOUND)
     pkg_check_modules(WPE_WEBKIT wpe-webkit-1.1 IMPORTED_TARGET)
+    if(NOT WPE_WEBKIT_FOUND)
+        pkg_check_modules(WPE_WEBKIT wpe-webkit-2.0 IMPORTED_TARGET)
+    endif()
+endif()
+
+if(NOT WPE_WEBKIT_FOUND)
+    message(FATAL_ERROR "wpe-webkit not found")
 endif()
 
 add_subdirectory(src)

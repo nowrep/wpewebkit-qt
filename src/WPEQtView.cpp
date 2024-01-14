@@ -443,38 +443,49 @@ static void jsAsyncReadyCallback(GObject* object, GAsyncResult* result, gpointer
 {
     GUniqueOutPtr<GError> error;
     std::unique_ptr<JavascriptCallbackData> data(reinterpret_cast<JavascriptCallbackData*>(userData));
+
+    JSCValue* value = nullptr;
+
+#if WEBKIT_CHECK_VERSION(2, 40, 0)
+    value = webkit_web_view_evaluate_javascript_finish(WEBKIT_WEB_VIEW (object), result, &error.outPtr());
+    if (!value) {
+        qWarning("Error running javascript: %s", error->message);
+        return;
+    }
+#else
     WebKitJavascriptResult* jsResult = webkit_web_view_run_javascript_finish(WEBKIT_WEB_VIEW(object), result, &error.outPtr());
     if (!jsResult) {
         qWarning("Error running javascript: %s", error->message);
         return;
     }
+    value = webkit_javascript_result_get_js_value(jsResult);
+#endif
 
     if (data->object.data()) {
         QQmlEngine* engine = qmlEngine(data->object.data());
         if (!engine) {
             qWarning("No JavaScript engine, unable to handle JavaScript callback!");
-            webkit_javascript_result_unref(jsResult);
-            return;
+        } else {
+            QJSValueList args;
+            QVariant variant;
+            // FIXME: Handle more value types?
+            if (jsc_value_is_string(value)) {
+                GUniquePtr<gchar> strValue(jsc_value_to_string(value));
+                JSCContext* context = jsc_value_get_context(value);
+                JSCException* exception = jsc_context_get_exception(context);
+                if (exception) {
+                    qWarning("Error running javascript: %s", jsc_exception_get_message(exception));
+                    jsc_context_clear_exception(context);
+                } else
+                    variant.setValue(QString(g_strdup(strValue.get())));
+            }
+            args.append(engine->toScriptValue(variant));
+            data->callback.call(args);
         }
-
-        QJSValueList args;
-        JSCValue* value = webkit_javascript_result_get_js_value(jsResult);
-        QVariant variant;
-        // FIXME: Handle more value types?
-        if (jsc_value_is_string(value)) {
-            GUniquePtr<gchar> strValue(jsc_value_to_string(value));
-            JSCContext* context = jsc_value_get_context(value);
-            JSCException* exception = jsc_context_get_exception(context);
-            if (exception) {
-                qWarning("Error running javascript: %s", jsc_exception_get_message(exception));
-                jsc_context_clear_exception(context);
-            } else
-                variant.setValue(QString(g_strdup(strValue.get())));
-        }
-        args.append(engine->toScriptValue(variant));
-        data->callback.call(args);
     }
+#if !WEBKIT_CHECK_VERSION(2, 40, 0)
     webkit_javascript_result_unref(jsResult);
+#endif
 }
 
 /*!
@@ -491,7 +502,11 @@ static void jsAsyncReadyCallback(GObject* object, GAsyncResult* result, gpointer
 void WPEQtView::runJavaScript(const QString& script, const QJSValue& callback)
 {
     std::unique_ptr<JavascriptCallbackData> data = std::make_unique<JavascriptCallbackData>(callback, QPointer<WPEQtView>(this));
+#if WEBKIT_CHECK_VERSION(2, 40, 0)
+    webkit_web_view_evaluate_javascript(m_webView.get(), script.toUtf8().constData(), -1, nullptr, nullptr, nullptr, jsAsyncReadyCallback, data.release());
+#else
     webkit_web_view_run_javascript(m_webView.get(), script.toUtf8().constData(), nullptr, jsAsyncReadyCallback, data.release());
+#endif
 }
 
 void WPEQtView::mouseMoveEvent(QMouseEvent* event)
