@@ -573,12 +573,14 @@ void WPEQtView::touchEvent(QTouchEvent* event)
 
 void WPEQtView::inputMethodEvent(QInputMethodEvent* event)
 {
-    wpeqt_im_context_event(WPEQT_IM_CONTEXT(m_imContext), event);
+    if (m_imContext)
+        wpeqt_im_context_event(WPEQT_IM_CONTEXT(m_imContext), event);
 }
 
 QVariant WPEQtView::inputMethodQuery(Qt::InputMethodQuery query) const
 {
     QVariant out;
-    wpeqt_im_context_query(WPEQT_IM_CONTEXT(m_imContext), query, &out);
+    if (m_imContext)
+        wpeqt_im_context_query(WPEQT_IM_CONTEXT(m_imContext), query, &out);
     return out;
 }
